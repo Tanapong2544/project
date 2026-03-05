@@ -3,37 +3,82 @@ import ReactDOM from 'react-dom/client';
 import {
   createBrowserRouter,
   RouterProvider,
+  Navigate
 } from "react-router-dom";
-import Signup from './pages/auth/signUpPage';
+
 import './index.css';
 import Login from './pages/auth/signInPage';
-import Home from './pages/home';
-import Navbar from './pages/navbar';
-import Footer from './layouts/footer';
+import Signup from './pages/auth/signUpPage';
+import App from './App'
+import Cart from './pages/๊user/Cart';
+import Checkout from './pages/๊user/Checkout';
+import Payment from './pages/๊user/Payment';
+import CategoryPage from './pages/๊user/Category';
+import FAQPage from './pages/๊user/Faq';
+
+
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminVerification from './pages/admin/AdminVerification';
+import AdminProductApproval from './pages/admin/AdminProductApproval';
+import AdminUsers from './pages/admin/AdminUsers';
+
+import SellerDashboard from './pages/seller/SellerDashboard';
+import SellerInventory from './pages/seller/SellerInventory';
+import SellerOrders from './pages/seller/SellerOrders';
+import SellerAddProduct from './pages/seller/SellerAddProduct';
+
 
 
 const router = createBrowserRouter([
-  {
-    path: "/signup",
-    element: <Signup />,
-  },
   {
     path: "/login",
     element: <Login />,
   },
   {
-    path: "/home",
-    element: <Home />,
+    path: "/signup",
+    element: <Signup />,
+  },
+  // --- กลุ่ม Admin ---
+  { path: "/admindashboard", element: <AdminDashboard /> },
+  { path: "/adminverification", element: <AdminVerification /> },
+  { path: "/adminproductapproval", element: <AdminProductApproval /> },
+  { path: "/adminusers", element: <AdminUsers /> },
+
+  // --- กลุ่ม Seller ---
+  { path: "/sellerdashboard", element: <SellerDashboard /> },
+  { path: "/sellerInventory", element: <SellerInventory /> },
+  { path: "/sellerorders", element: <SellerOrders /> },
+  { path: "/selleraddproduct", element: <SellerAddProduct /> },
+
+  // --- ย้ายหน้าจาก MainLayout ออกมาตรงนี้ ---
+  {
+    path: "/",
+    element: <App />, // หน้าแรกสุด
   },
   {
-    path: "/navbar",
-    element: <Navbar />,
+    path: "/category",
+    element: <CategoryPage />,
   },
   {
-    path: "//footer",
-    element: <Footer />,
+    path: "/faq",
+    element: <FAQPage />,
+  },
+  {
+    path: "/cart",
+    element: <Cart />,
+  },
+  {
+    path: "/checkout",
+    element: <Checkout />,
   },
 
+  {
+    path: "/payment",
+    element: <Payment />,
+  },
+
+
+  
 ]);
 
 const rootElement = document.getElementById("root") as HTMLElement;
