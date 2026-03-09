@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import logo from "../../assets/Logo_Welddefectspecimen.svg";
+import axios from "axios";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -24,50 +26,43 @@ export default function Login() {
     setIsLoading(true);
     setError("");
 
-    setTimeout(() => {
-      const { username, password } = credentials;
-      console.log(credentials);
-      
-      if (username === "admin01" && password === "123456") {
-        saveAuthSession(username, "Admin Strat", "admin");
-        navigate("/admindashboard");
-      } 
-      else if (username === "seller01" && password === "123456") {
-        saveAuthSession(username, "Somsak Seller", "seller");
-        navigate("/sellerdashboard");
-      } 
-      else if (username === "user" && password === "123456") {
-        saveAuthSession(username, "Somchai Jaidee", "user");
-      } 
-      else {
-        setError("ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง");
-      }
-      
-      setIsLoading(false);
-    }, 1000);
-  };
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/auth/login",credentials,
+      );
 
-  const saveAuthSession = (username: string, fullName: string, role: string) => {
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("username", username);
-    localStorage.setItem("userName", fullName); 
-    localStorage.setItem("userRole", role);
-    
-    // แจ้งเตือน Navbar ให้เปลี่ยนสถานะทันที (สำหรับบาง Browser ที่ Storage event ไม่ทำงานใน tab เดียวกัน)
-    window.dispatchEvent(new Event("storage"));
+      const { access_token } = response.data;
+      localStorage.setItem("access_token", access_token);
+
+      const decoded: any = jwtDecode(access_token);
+      const role = decoded.role;
+
+      if (role === "admin") navigate("/admindashboard");
+      else if (role === "seller") navigate("/sellerdashboard");
+      else navigate("/");
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 relative overflow-hidden font-sans">
-      
       <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#FF85A2] opacity-[0.03] rounded-full blur-[120px]"></div>
       <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-[#0F172A] opacity-[0.03] rounded-full blur-[120px]"></div>
 
       <div className="max-w-md w-full bg-white/70 backdrop-blur-2xl rounded-[3rem] shadow-[0_32px_64px_-15px_rgba(15,23,42,0.1)] p-12 border border-white relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex flex-col items-center mb-8">
           <img src={logo} alt="Logo" className="w-40 h-auto mb-4" />
-          <h2 className="text-2xl font-black text-[#0F172A] tracking-tight">ล็อกอินเข้าสู่ระบบ</h2>
-          <p className="text-slate-400 text-[10px] mt-1 uppercase tracking-[0.2em]">Log in to the system</p>
+          <h2 className="text-2xl font-black text-[#0F172A] tracking-tight">
+            ล็อกอินเข้าสู่ระบบ
+          </h2>
+          <p className="text-slate-400 text-[10px] mt-1 uppercase tracking-[0.2em]">
+            Log in to the system
+          </p>
         </div>
 
         <form className="space-y-6" onSubmit={handleLogin}>
@@ -112,8 +107,8 @@ export default function Login() {
               type="submit"
               disabled={isLoading}
               className={`w-full py-5 rounded-2xl font-black transition-all flex justify-center items-center shadow-xl active:scale-95 uppercase tracking-[0.2em] text-[11px] ${
-                isLoading 
-                  ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                isLoading
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                   : "bg-[#0F172A] text-white hover:bg-[#DB2777] shadow-blue-900/10"
               }`}
             >
@@ -123,7 +118,7 @@ export default function Login() {
                   <span>Authenticating...</span>
                 </div>
               ) : (
-                "SIGN IN TO SYSTEM"                
+                "SIGN IN TO SYSTEM"
               )}
             </button>
           </div>
@@ -131,7 +126,12 @@ export default function Login() {
           <div className="text-center mt-10">
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
               ยังไม่มีบัญชีใช่ไหม?
-              <Link to="/signup" className="text-[#DB2777] hover:text-[#0F172A] ml-2 transition-colors">ลงทะเบียน</Link>
+              <Link
+                to="/signup"
+                className="text-[#DB2777] hover:text-[#0F172A] ml-2 transition-colors"
+              >
+                ลงทะเบียน
+              </Link>
             </p>
           </div>
         </form>

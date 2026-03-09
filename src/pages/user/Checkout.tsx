@@ -14,8 +14,8 @@ export default function Checkout() {
     name: "",
     phone: "",
     address: "",
-    subDistrict: "", // ตำบล / แขวง
-    district: "",    // อำเภอ / เขต
+    subDistrict: "", 
+    district: "",    
     province: "",
     zipcode: "",
   });
@@ -49,7 +49,6 @@ export default function Checkout() {
             <h2 className="text-3xl font-black text-[#0F172A] tracking-tight">ข้อมูลการจัดส่ง</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* ชื่อ และ เบอร์ */}
               <div className="md:col-span-2">
                 <label className="text-[11px] font-black uppercase text-slate-400 ml-2">ชื่อ-นามสกุล ผู้รับ</label>
                 <input required name="name" onChange={handleInputChange} className="w-full mt-1 p-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-[#0F172A] outline-none shadow-sm" placeholder="" />
@@ -59,13 +58,11 @@ export default function Checkout() {
                 <input required name="phone" onChange={handleInputChange} className="w-full mt-1 p-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-[#0F172A] outline-none shadow-sm" placeholder="" />
               </div>
 
-              {/* ที่อยู่ */}
               <div className="md:col-span-2">
                 <label className="text-[11px] font-black uppercase text-slate-400 ml-2">ที่อยู่ (เลขที่บ้าน, หมู่, ซอย, ถนน)</label>
                 <textarea required name="address" onChange={handleInputChange} rows={2} className="w-full mt-1 p-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-[#0F172A] outline-none shadow-sm resize-none" placeholder="" />
               </div>
 
-              {/* แขวง และ เขต */}
               <div>
                 <label className="text-[11px] font-black uppercase text-slate-400 ml-2">ตำบล / แขวง</label>
                 <input required name="subDistrict" onChange={handleInputChange} className="w-full mt-1 p-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-[#0F172A] outline-none shadow-sm" placeholder="" />
@@ -75,7 +72,6 @@ export default function Checkout() {
                 <input required name="district" onChange={handleInputChange} className="w-full mt-1 p-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-[#0F172A] outline-none shadow-sm" placeholder="" />
               </div>
 
-              {/* จังหวัด และ รหัสไปรษณีย์ */}
               <div>
                 <label className="text-[11px] font-black uppercase text-slate-400 ml-2">จังหวัด</label>
                 <select required name="province" onChange={handleInputChange} className="w-full mt-1 p-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-[#0F172A] outline-none shadow-sm cursor-pointer appearance-none">
@@ -90,7 +86,6 @@ export default function Checkout() {
             </div>
           </div>
 
-          {/* สรุปออเดอร์ (ขวามือ) */}
           <div className="bg-[#0F172A] text-white rounded-[3rem] p-10 h-fit sticky top-28 shadow-xl">
              <h3 className="text-xl font-black mb-6">สรุปคำสั่งซื้อ</h3>
              <div className="space-y-4 mb-8 border-b border-white/10 pb-6 max-h-40 overflow-y-auto">

@@ -46,7 +46,7 @@ export default function Signup() {
         phone: formData.phone, 
       };
 
-      await axios.post("http://localhost:5000/users/register", payload);
+      await axios.post("http://localhost:5000/auth/register", payload);
 
       await swal.fire({
         icon: "success",

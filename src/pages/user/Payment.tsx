@@ -44,7 +44,6 @@ export default function Payment() {
 
       <main className="flex-grow max-w-5xl mx-auto w-full px-6 py-12">
         
-        {/* --- Back Button --- */}
         <button 
           onClick={() => navigate("/cart")}
           className="group flex items-center gap-3 text-slate-400 hover:text-[#0F172A] transition-all mb-10 font-black text-[10px] uppercase tracking-[0.2em]"
@@ -62,7 +61,6 @@ export default function Payment() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           
-          {/* Section 01: Bank Details & Total Amount */}
           <div className="bg-white p-8 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between">
             <div>
               <h2 className="text-xl font-black text-[#0F172A] mb-8 flex items-center gap-3">
@@ -96,7 +94,6 @@ export default function Payment() {
               </div>
             </div>
 
-            {/* ✨ ปรับ Total Amount ให้ Minimal และไม่เด่นเกินไป ✨ */}
             <div className="mt-4 pt-8 border-t border-slate-50">
               <div className="flex items-center justify-between bg-[#F8FAFC] px-6 py-4 rounded-2xl border border-slate-100">
                 <div className="flex flex-col">
