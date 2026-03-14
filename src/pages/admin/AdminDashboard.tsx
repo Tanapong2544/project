@@ -9,35 +9,29 @@ import {
   TrendingUp,
   ShoppingBag,
   Clock,
+  Menu,
+  X,
+  ChevronRight,
   ArrowUpRight,
-  BarChart3
+  Activity
 } from "lucide-react";
 
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   BarChart,
   Bar,
+  AreaChart,
+  Area
 } from "recharts";
 
-// --- Types ---
-interface OrderSummary {
-  id: string;
-  customerName: string;
-  amount: number;
-  date: string;
-  status: "pending" | "approved" | "rejected";
-}
-
+// --- Mock Data ---
 const dataByTime = {
   daily: {
-    sales: "฿3,500",
+    sales: 3500,
     orders: 12,
     pending: 2,
     label: "วันนี้",
@@ -48,7 +42,7 @@ const dataByTime = {
     ],
   },
   weekly: {
-    sales: "฿24,800",
+    sales: 24800,
     orders: 85,
     pending: 5,
     label: "สัปดาห์นี้",
@@ -63,7 +57,7 @@ const dataByTime = {
     ],
   },
   monthly: {
-    sales: "฿112,750",
+    sales: 112750,
     orders: 420,
     pending: 18,
     label: "เดือนนี้",
@@ -79,255 +73,245 @@ const dataByTime = {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const currentChartData = dataByTime[timeRange].chartData;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-[#0F172A]">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#0F172A] text-white flex flex-col p-6 sticky top-0 h-screen shadow-xl">
-        <div className="mb-10 px-2">
-          <h1 className="text-xl font-black tracking-tighter italic">
-            WELD<span className="text-[#FF85A2]">ADMIN</span>
-          </h1>
-          <p className="text-[9px] text-slate-500 uppercase font-black tracking-[0.2em] mt-1">Central Authority</p>
+    <div className="h-screen w-full bg-[#F1F5F9] flex overflow-hidden font-sans text-slate-900">
+      
+      {/* Sidebar - สีกรม (คงที่) */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-72 bg-[#0F172A] text-white flex flex-col p-6 
+        transition-transform duration-300 lg:relative lg:translate-x-0 
+        flex-shrink-0 border-r border-white/5
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+      `}>
+        <div className="flex items-center gap-3 mb-10 px-2">
+          <div className="w-9 h-9 bg-[#BE185D] rounded-xl flex items-center justify-center font-black shadow-lg shadow-pink-900/40">W</div>
+          <h1 className="text-2xl font-bold uppercase tracking-tight italic">WELD<span className="text-[#0EA5E9]">ADMIN</span></h1>
         </div>
 
-        <nav className="flex-1 space-y-1">
-          <SidebarItem label="ภาพรวมระบบ" icon={<LayoutDashboard size={18} />} active onClick={() => navigate("/admindashboard")} />
-          <SidebarItem label="ตรวจสอบสลิป" icon={<CreditCard size={18} />} onClick={() => navigate("/adminverification")} />
-          <SidebarItem label="อนุมัติสินค้า" icon={<Package size={18} />} onClick={() => navigate("/adminproductapproval")} />
-          <SidebarItem label="รายชื่อผู้ใช้" icon={<Users size={18} />} onClick={() => navigate("/adminusers")} />
+        <nav className="flex-1 space-y-1.5 overflow-y-auto pr-2 custom-scrollbar">
+          <SidebarItem label="ภาพรวมระบบ" icon={<LayoutDashboard size={20} />} active />
+          <SidebarItem label="ตรวจสอบสลิป" icon={<CreditCard size={20} />} onClick={() => navigate("/adminverification")} />
+          <SidebarItem label="อนุมัติสินค้า" icon={<Package size={20} />} onClick={() => navigate("/adminproductapproval")} />
+          <SidebarItem label="จัดการผู้ใช้งาน" icon={<Users size={20} />} onClick={() => navigate("/adminusers")} />
         </nav>
 
-        <div className="pt-6 border-t border-slate-800">
-          <button
-            onClick={() => navigate("/login")}
-            className="flex items-center gap-3 text-slate-400 hover:text-[#FF85A2] transition text-sm font-black w-full p-2 group"
-          >
-            <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" /> ออกจากระบบ
+        <div className="mt-auto pt-6 border-t border-white/5">
+          <button onClick={() => { localStorage.clear(); navigate("/login"); }} 
+                  className="flex items-center gap-3 w-full p-4 text-slate-400 hover:text-[#BE185D] transition-all font-bold text-xs uppercase tracking-widest rounded-2xl hover:bg-white/5">
+            <LogOut size={18} /> ออกจากระบบ
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 p-8 lg:p-12 overflow-y-auto">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="h-1 w-8 bg-[#FF85A2] rounded-full"></span>
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Analytics Command Center</p>
-            </div>
-            <h2 className="text-3xl font-black text-[#0F172A] italic tracking-tighter uppercase">Dashboard</h2>
-          </div>
-
-          <div className="bg-slate-200/50 p-1.5 rounded-2xl flex gap-1 border border-slate-200/50">
-            {(["daily", "weekly", "monthly"] as const).map((type) => (
-              <button
-                key={type}
-                onClick={() => setTimeRange(type)}
-                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${
-                  timeRange === type ? "bg-white text-[#0F172A] shadow-md" : "text-slate-500 hover:text-[#0F172A]"
-                }`}
-              >
-                {type === "daily" ? "รายวัน" : type === "weekly" ? "รายสัปดาห์" : "รายเดือน"}
-              </button>
-            ))}
-          </div>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 bg-[#F1F5F9] relative overflow-hidden">
+        
+        {/* Mobile Header */}
+        <header className="lg:hidden flex items-center justify-between p-4 bg-[#0F172A] text-white flex-shrink-0">
+          <h1 className="text-2xl font-bold uppercase tracking-tight italic">WELD<span className="text-[#0EA5E9]">ADMIN</span></h1>
+          <button onClick={() => setSidebarOpen(true)} className="p-2 bg-white/10 rounded-lg text-white">
+            <Menu size={20} />
+          </button>
         </header>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <StatCard
-            title="ยอดขายรวม"
-            value={dataByTime[timeRange].sales}
-            subValue={`อัปเดตข้อมูล${dataByTime[timeRange].label}`}
-            icon={<TrendingUp className="text-emerald-500" size={20} />}
-            trend="+12.5%"
-          />
-          <StatCard
-            title="รอตรวจสอบ"
-            value={dataByTime[timeRange].pending}
-            subValue="สลิปที่ต้องอนุมัติ"
-            icon={<Clock className="text-[#FF85A2]" size={20} />}
-            onClick={() => navigate("/adminverification")}
-            highlight
-          />
-          <StatCard
-            title="ออเดอร์ทั้งหมด"
-            value={dataByTime[timeRange].orders}
-            subValue="รายการสั่งซื้อสำเร็จ"
-            icon={<ShoppingBag className="text-blue-500" size={20} />}
-          />
-        </div>
-
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
-          {/* Line Chart */}
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 relative group">
-            <div className="flex justify-between items-center mb-8">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-500">
-                    <BarChart3 size={18} />
-                </div>
-                <h3 className="text-sm font-black text-[#0F172A] uppercase tracking-tight">Performance Metrics</h3>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{dataByTime[timeRange].label}</p>
-            </div>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-10 lg:p-12 custom-scrollbar">
+          <div className="max-w-[1400px] mx-auto">
             
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart data={currentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} 
-                    dy={10}
-                />
-                <YAxis 
-                    yAxisId="left" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}}
-                />
-                <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }} />
-                <Line 
-                    yAxisId="left" 
-                    type="monotone" 
-                    dataKey="sales" 
-                    stroke="#6366F1" 
-                    name="ยอดขาย (฿)" 
-                    strokeWidth={4} 
-                    dot={{ r: 4, fill: '#6366F1', strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 6, strokeWidth: 0 }} 
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Bar Chart */}
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <div className="flex justify-between items-center mb-8">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-pink-50 rounded-lg text-[#FF85A2]">
-                    <ShoppingBag size={18} />
+            {/* Header Section */}
+            <div className="mb-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                   <div className="p-2 bg-[#BE185D]/10 rounded-lg">
+                      <Activity className="text-[#BE185D]" size={24} />
+                   </div>
+                   <h2 className="text-4xl font-black text-slate-800 tracking-tighter uppercase italic">Dashboard Overview</h2>
                 </div>
-                <h3 className="text-sm font-black text-[#0F172A] uppercase tracking-tight">Order Distribution</h3>
+                <p className="text-slate-500 text-sm font-medium">สรุปผลการดำเนินงานและสถิติในรูปแบบกราฟิก</p>
               </div>
-              <ArrowUpRight className="text-slate-300" size={18} />
+
+              <div className="flex bg-white p-1.5 rounded-[1.25rem] shadow-sm border border-slate-200">
+                {(["daily", "weekly", "monthly"] as const).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setTimeRange(type)}
+                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      timeRange === type ? "bg-[#0F172A] text-white shadow-lg" : "text-slate-400 hover:bg-slate-50"
+                    }`}
+                  >
+                    {type === "daily" ? "รายวัน" : type === "weekly" ? "รายสัปดาห์" : "รายเดือน"}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={currentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}}
-                    dy={10}
-                />
-                <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}}
-                />
-                <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '16px', border: 'none' }} />
-                <Bar 
-                    dataKey="orders" 
-                    fill="#FF85A2" 
-                    name="จำนวนออเดอร์" 
-                    radius={[6, 6, 0, 0]} 
-                    barSize={30}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {/* Stats Grid */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
+              <StatCard
+                title="ยอดขายรวม"
+                value={`${dataByTime[timeRange].sales.toLocaleString()} บาท`}
+                subValue={`ยอดขายสะสม ${dataByTime[timeRange].label}`}
+                icon={<TrendingUp size={24} />}
+                trend="+12.5%"
+                color="pink"
+              />
+              <StatCard
+                title="รอตรวจสอบสลิป"
+                value={`${dataByTime[timeRange].pending} รายการ`}
+                subValue="รายการที่รอการยืนยันการโอน"
+                icon={<Clock size={24} />}
+                onClick={() => navigate("/adminverification")}
+                highlight
+                color="amber"
+              />
+              <StatCard
+                title="ออเดอร์ทั้งหมด"
+                value={`${dataByTime[timeRange].orders} ออเดอร์`}
+                subValue="จำนวนคำสั่งซื้อสำเร็จทั้งหมด"
+                icon={<ShoppingBag size={24} />}
+                color="blue"
+              />
+            </section>
+
+            {/* Charts Section */}
+            <section className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+              <ChartContainer title="สถิติกราฟยอดขาย" unit="บาท" icon={<TrendingUp size={18} />}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={currentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#BE185D" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#BE185D" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <XAxis dataKey="name" tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 'bold'}} axisLine={false} tickLine={false} dy={10} />
+                    <YAxis tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 'bold'}} axisLine={false} tickLine={false} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', padding: '15px' }} 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="sales" 
+                      stroke="#BE185D" 
+                      strokeWidth={4} 
+                      fillOpacity={1} 
+                      fill="url(#colorSales)" 
+                      animationDuration={1500}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+
+              <ChartContainer title="จำนวนคำสั่งซื้อ" unit="รายการ" icon={<ShoppingBag size={18} />}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={currentChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <XAxis dataKey="name" tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 'bold'}} axisLine={false} tickLine={false} dy={10} />
+                    <YAxis tick={{fill: '#94A3B8', fontSize: 10, fontWeight: 'bold'}} axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{fill: '#F1F5F9'}} contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }} />
+                    <Bar dataKey="orders" fill="#0EA5E9" radius={[8, 8, 0, 0]} barSize={32} animationDuration={1500} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </section>
           </div>
         </div>
+
+        {/* Mobile Overlay */}
+        {isSidebarOpen && (
+          <div className="fixed inset-0 bg-[#0F172A]/80 z-40 lg:hidden backdrop-blur-md transition-opacity" onClick={() => setSidebarOpen(false)} />
+        )}
       </main>
     </div>
   );
 }
 
-// --- Sub Components ---
+// --- Helper Components ---
 
-interface SidebarItemProps {
-  label: string;
-  icon: React.ReactNode;
-  active?: boolean;
-  badge?: number;
-  onClick?: () => void;
-}
-
-function SidebarItem({ label, icon, active = false, badge = 0, onClick }: SidebarItemProps) {
+function SidebarItem({ label, icon, active = false, onClick }: any) {
   return (
-    <div
+    <button
       onClick={onClick}
-      className={`group flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${
-        active
-          ? "bg-[#FF85A2] text-white shadow-lg shadow-pink-500/20"
+      className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all duration-300 ${
+        active 
+          ? "bg-[#BE185D] text-white shadow-xl shadow-pink-900/40" 
           : "text-slate-400 hover:bg-white/5 hover:text-white"
       }`}
     >
-      <div className="flex items-center gap-3">
-        <span className={`${active ? "text-white" : "text-slate-500 group-hover:text-white"} transition-colors`}>
-            {icon}
-        </span>
-        <span className="text-sm font-bold tracking-tight">{label}</span>
+      <div className="flex items-center gap-4">
+        <span className={active ? "text-white" : "text-slate-500"}>{icon}</span>
+        <span className="text-sm font-black uppercase tracking-tight">{label}</span>
       </div>
-      {badge > 0 && (
-        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-          active ? "bg-white text-[#FF85A2]" : "bg-[#FF85A2] text-white"
-        }`}>
-          {badge}
-        </span>
-      )}
+      {active && <ChevronRight size={16} />}
+    </button>
+  );
+}
+
+function StatCard({ title, value, subValue, icon, trend, highlight, onClick, color }: any) {
+  const colorSchemes: any = {
+    pink: "bg-pink-50 text-[#BE185D] border-pink-100",
+    blue: "bg-blue-50 text-[#0EA5E9] border-blue-100",
+    amber: "bg-amber-50 text-amber-600 border-amber-100"
+  };
+
+  return (
+    <div
+      onClick={onClick}
+      className={`bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 transition-all duration-500 group relative overflow-hidden ${
+        onClick ? "cursor-pointer hover:border-[#BE185D]/30 hover:-translate-y-2" : ""
+      }`}
+    >
+      <div className="flex justify-between items-start mb-8 relative z-10">
+        <div className={`p-4 rounded-2xl transition-colors ${colorSchemes[color] || "bg-slate-50 text-slate-400"}`}>
+          {icon}
+        </div>
+        {trend && (
+          <div className="flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+            <ArrowUpRight size={12} /> {trend}
+          </div>
+        )}
+      </div>
+      <div className="relative z-10">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{title}</p>
+        <h4 className="text-3xl font-black text-slate-900 tracking-tighter mb-2">{value}</h4>
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold italic">
+          <div className={`w-2 h-2 rounded-full ${highlight ? 'animate-pulse bg-[#BE185D]' : 'bg-slate-200'}`} />
+          {subValue}
+        </div>
+      </div>
+      {/* Background Decor */}
+      <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-slate-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700" />
     </div>
   );
 }
 
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  subValue: string;
-  icon: React.ReactNode;
-  trend?: string;
-  highlight?: boolean;
-  onClick?: () => void;
-}
-
-function StatCard({ title, value, subValue, icon, trend, highlight, onClick }: StatCardProps) {
+function ChartContainer({ title, unit, icon, children }: any) {
   return (
-    <div
-      onClick={onClick}
-      className={`bg-white p-8 rounded-[2.5rem] border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden ${
-        onClick ? "cursor-pointer" : ""
-      } ${highlight ? "border-pink-100 bg-pink-50/10" : "border-slate-50"}`}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-3 rounded-2xl ${highlight ? 'bg-pink-100 text-[#FF85A2]' : 'bg-slate-50 text-slate-400'}`}>
-          {icon}
+    <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col">
+      <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-slate-50 rounded-xl text-slate-400 border border-slate-100">
+            {icon}
+          </div>
+          <div>
+            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">{title}</h3>
+            <p className="text-xs font-bold text-slate-800 uppercase italic underline decoration-[#BE185D] decoration-2 underline-offset-4 tracking-widest">Unit: {unit}</p>
+          </div>
         </div>
-        {trend && (
-            <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-lg">
-                {trend}
-            </span>
-        )}
+        <div className="flex gap-1.5">
+           <div className="w-1.5 h-1.5 rounded-full bg-slate-100" />
+           <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+           <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+        </div>
       </div>
-      
-      <div>
-        <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">
-            {title}
-        </p>
-        <h4 className="text-3xl font-black text-[#0F172A] tracking-tighter mb-1">{value}</h4>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight italic">
-            {subValue}
-        </p>
+      <div className="flex-1 min-h-[300px] w-full">
+        {children}
       </div>
-
     </div>
   );
 }

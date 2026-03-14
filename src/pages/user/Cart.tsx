@@ -103,7 +103,7 @@ export default function Cart() {
                       {item.name}
                     </h3>
                     <p className="text-[#1E293B] font-black">
-                      ฿{item.price.toLocaleString()}
+                      {item.price.toLocaleString()} บาท
                     </p>
                   </div>
 
@@ -144,7 +144,7 @@ export default function Cart() {
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between text-white font-medium">
                     <span>ยอดรวมสินค้า</span>
-                    <span>฿{totalPrice.toLocaleString()}</span>
+                    <span>{totalPrice.toLocaleString()} บาท</span>
                   </div>
                   <div className="flex justify-between text-white font-medium">
                     <span>ค่าจัดส่ง</span>
@@ -154,7 +154,7 @@ export default function Cart() {
                   <div className="flex justify-between text-2xl font-black">
                     <span>รวมทั้งสิ้น</span>
                     <span className="text-white">
-                      ฿{totalPrice.toLocaleString()}
+                      {totalPrice.toLocaleString()} บาท
                     </span>
                   </div>
                 </div>

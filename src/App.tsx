@@ -12,11 +12,13 @@ export default function App() {
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const response = await axios.get("http://localhost:5000/products/all");
+        console.log("Fetched products:", response.data);
         setProducts(response.data);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -117,6 +119,7 @@ export default function App() {
                   <p className="text-2xl font-black mb-6 mt-auto">
                     {formatPrice(product.price)} บาท
                   </p>
+                  
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

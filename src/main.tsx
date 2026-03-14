@@ -24,7 +24,6 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import SellerDashboard from "./pages/seller/SellerDashboard";
 import SellerInventory from "./pages/seller/SellerInventory";
 import SellerOrders from "./pages/seller/SellerOrders";
-import SellerAddProduct from "./pages/seller/SellerAddProduct";
 
 const router = createBrowserRouter([
   {
@@ -43,7 +42,6 @@ const router = createBrowserRouter([
   { path: "/sellerdashboard", element: <SellerDashboard /> },
   { path: "/sellerInventory", element: <SellerInventory /> },
   { path: "/sellerorders", element: <SellerOrders /> },
-  { path: "/selleraddproduct", element: <SellerAddProduct /> },
   {
     path: "/",
     element: <App />,
