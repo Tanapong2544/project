@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
+import { useCartStore } from "../src/store/useCartStore"; // import store
+import type { CartItem } from "../src/store/useCartStore"; // import type
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
 import axios from "axios";
@@ -9,6 +11,9 @@ import Swal from "sweetalert2";
 export default function App() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
+
+  const addItem = useCartStore((state) => state.addItem);
+
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -35,24 +40,25 @@ export default function App() {
         text: "คุณต้องเข้าสู่ระบบก่อนเพื่อเพิ่มสินค้าลงในตะกร้า",
         confirmButtonColor: "#0F172A",
         confirmButtonText: "เข้าสู่ระบบ",
+        customClass: { popup: "rounded-[2rem]" },
       }).then((result) => {
         if (result.isConfirmed) navigate("/login");
       });
       return;
     }
 
-    const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const existingIndex = currentCart.findIndex(
-      (item: any) => item.id === product.id,
-    );
+    const itemToAdd: CartItem = {
+      id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      image: product.image,
+      sellerId: product.sellerId,
+      quantity: 1,
+      category: product.category,
+      stock: Number(product.stock),
+    };
 
-    if (existingIndex > -1) {
-      currentCart[existingIndex].quantity += 1;
-    } else {
-      currentCart.push({ ...product, quantity: 1 });
-    }
-    localStorage.setItem("cart", JSON.stringify(currentCart));
-    window.dispatchEvent(new Event("cartUpdate"));
+    addItem(itemToAdd);
     setSelectedProduct(null);
 
     Swal.fire({
@@ -61,6 +67,8 @@ export default function App() {
       text: `${product.name} ถูกเพิ่มเข้าตะกร้าแล้ว`,
       confirmButtonColor: "#0F172A",
       timer: 1500,
+      showConfirmButton: false,
+      customClass: { popup: "rounded-[2rem]" },
     });
   };
 
@@ -117,6 +125,9 @@ export default function App() {
                   <p className="text-2xl font-black mb-6 mt-auto">
                     {formatPrice(product.price)} บาท
                   </p>
+                  <span className="text-[9px] font-black uppercase text-[#DB2777] mb-2">
+                    สินค้าคงเหลือ {product.stock} ชิ้น
+                  </span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

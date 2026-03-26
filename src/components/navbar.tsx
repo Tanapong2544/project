@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useCartStore } from "../store/useCartStore"; // ปรับ path ให้ตรงกับที่เก็บไฟล์ store ของคุณ
 import Logo from "../assets/Logo_Welddefectspecimen.svg";
 import Swal from "sweetalert2";
 
@@ -8,20 +8,12 @@ export default function Navbar() {
   const location = useLocation();
   const { user, isLoggedIn } = useAuth();
 
-  const [cartCount, setCartCount] = useState(0);
+  // ดึง items มาจาก Zustand Store โดยตรง
+  // เมื่อใดก็ตามที่ items เปลี่ยน Navbar จะ render ใหม่โดยอัตโนมัติ
+  const items = useCartStore((state) => state.items);
 
-  const updateCartCount = () => {
-    const savedCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    setCartCount(savedCart.length);
-  };
-
-  useEffect(() => {
-    updateCartCount();
-    window.addEventListener("cartUpdate", updateCartCount);
-    return () => {
-      window.removeEventListener("cartUpdate", updateCartCount);
-    };
-  }, []);
+  // คำนวณจำนวนชิ้นรวม (รวม quantity ของทุกรายการ)
+  const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
   const handleLogout = async () => {
     const result = await Swal.fire({
@@ -36,9 +28,7 @@ export default function Navbar() {
 
     if (result.isConfirmed) {
       localStorage.removeItem("access_token");
-      localStorage.removeItem("cart");
-      localStorage.removeItem("shippingInfo");
-      localStorage.removeItem("username");
+      localStorage.removeItem("cart-storage"); // เคลียร์ชื่อ key ให้ตรงกับที่ persist ไว้
       window.location.href = "/";
     }
   };

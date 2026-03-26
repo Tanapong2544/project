@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import axios from "axios"; 
+import axios from "axios";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 import { useAuth } from "../../hooks/useAuth";
+import { useCartStore } from "../../../src/store/useCartStore";
+import type { CartItem } from "../../../src/store/useCartStore";
 
 export default function Category() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
+
+  const addItem = useCartStore((state) => state.addItem);
 
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [selectedCat, setSelectedCat] = useState("ทั้งหมด");
@@ -37,12 +41,14 @@ export default function Category() {
     selectedCat === "ทั้งหมด"
       ? allProducts
       : allProducts.filter((p) => p.category === selectedCat);
+
   const formatPrice = (price: number) => {
     return price.toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
   };
+
   const handleAddToCart = (product: any) => {
     if (!isLoggedIn) {
       Swal.fire({
@@ -51,19 +57,25 @@ export default function Category() {
         text: "คุณต้องเข้าสู่ระบบก่อนเพื่อเพิ่มสินค้าลงในตะกร้า",
         confirmButtonColor: "#0F172A",
         confirmButtonText: "เข้าสู่ระบบ",
+        customClass: { popup: "rounded-[2rem]" },
       }).then((result) => {
         if (result.isConfirmed) navigate("/login");
       });
       return;
     }
 
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const idx = cart.findIndex((item: any) => item.id === product.id);
-    if (idx > -1) cart[idx].quantity += 1;
-    else cart.push({ ...product, quantity: 1 });
+    const itemToAdd: CartItem = {
+      id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      image: product.image,
+      sellerId: product.sellerId,
+      quantity: 1,
+      category: product.category,
+      stock: Number(product.stock),
+    };
 
-    localStorage.setItem("cart", JSON.stringify(cart));
-    window.dispatchEvent(new Event("cartUpdate"));
+    addItem(itemToAdd);
 
     Swal.fire({
       icon: "success",
@@ -72,6 +84,7 @@ export default function Category() {
       confirmButtonColor: "#0F172A",
       timer: 1500,
       timerProgressBar: true,
+      customClass: { popup: "rounded-[2rem]" },
     });
   };
 
@@ -134,6 +147,10 @@ export default function Category() {
                   </p>
                   <span className="text-xs font-bold text-slate-400">บาท</span>
                 </div>
+
+                <span className="text-[9px] font-black uppercase text-[#DB2777] mb-2">
+                  สินค้าคงเหลือ {product.stock} ชิ้น
+                </span>
 
                 <button
                   onClick={() => handleAddToCart(product)}

@@ -8,12 +8,10 @@ import {
   ClipboardList,
   LogOut,
   Plus,
-  Search,
   Edit3,
   Trash2,
   Image as ImageIcon,
   Package,
-  AlertTriangle,
   ChevronDown,
 } from "lucide-react";
 
@@ -27,6 +25,7 @@ interface Product {
   name: string;
   description: string;
   stock: number;
+  status: string;
   price: number;
   category: string;
   image: string | null;
@@ -99,6 +98,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 export default function SellerInventory() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
+  console.log(products);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -109,6 +109,7 @@ export default function SellerInventory() {
     stock: "",
     price: "",
     category: "",
+    status: "",
   });
 
   const fetchProducts = async () => {
@@ -340,7 +341,10 @@ export default function SellerInventory() {
                       rows={4}
                       className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-[#FF85A2]/20 focus:bg-white text-sm font-bold transition-all resize-none shadow-sm"
                       onChange={(e) =>
-                        setFormData({...formData,description: e.target.value,})
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -438,6 +442,9 @@ export default function SellerInventory() {
                   <th className="px-8 py-6 text-[9px] uppercase font-black text-slate-400 tracking-widest">
                     Inventory Status
                   </th>
+                  <th className="px-8 py-6 text-[9px] uppercase font-black text-slate-400 tracking-widest">
+                    Product Status
+                  </th>
                   <th className="px-8 py-6 text-[9px] uppercase font-black text-slate-400 tracking-widest text-right">
                     Actions
                   </th>
@@ -510,6 +517,19 @@ export default function SellerInventory() {
                       </td>
                       <td className="px-8 py-6">
                         <InventoryBadge stock={item.stock} />
+                      </td>
+                      <td className="px-8 py-6">
+                        <span
+                          className={`text-[10px] font-black px-2 py-1 rounded-lg uppercase ${
+                            item.status === "approved"
+                              ? "bg-green-100 text-green-600"
+                              : item.status === "pending"
+                                ? "bg-amber-100 text-amber-600"
+                                : "bg-red-100 text-red-600"
+                          }`}
+                        >
+                          {item.status}
+                        </span>
                       </td>
                       <td className="px-8 py-6 text-right">
                         <div className="flex justify-end gap-1">

@@ -1,41 +1,117 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useCartStore } from "../../store/useCartStore";
+import type { CartItem } from "../../store/useCartStore";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 export default function Payment() {
   const navigate = useNavigate();
-  const [totalAmount, setTotalAmount] = useState(0);
-  const [slipImage, setSlipImage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const items = useCartStore((state) => state.items);
+  const shippingInfo = useCartStore((state) => state.shippingInfo);
+  const clearCart = useCartStore((state) => state.clearCart);
+
+  const [totalAmount, setTotalAmount] = useState<number>(0);
+  const [file, setFile] = useState<File | null>(null);
+  const [slipPreview, setSlipPreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const total = savedCart.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
+    if (items.length === 0) {
+      navigate("/cart");
+      return;
+    }
+    const total = items.reduce(
+      (acc: number, item: CartItem) => acc + item.price * item.quantity,
+      0,
+    );
     setTotalAmount(total);
-  }, []);
+  }, [items, navigate]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setSlipImage(reader.result as string);
-      reader.readAsDataURL(file);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setSlipPreview(URL.createObjectURL(selectedFile));
     }
   };
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!slipImage) return;
 
+    if (!file || !shippingInfo) {
+      Swal.fire({
+        icon: "warning",
+        title: "กรุณาอัปโหลดสลิปธนาคารและกรอกที่อยู่",
+      });
+      return;
+    }
+
+    const token =
+      localStorage.getItem("token") || localStorage.getItem("access_token");
+
+    if (!token) {
+      Swal.fire({
+        icon: "error",
+        title: "ไม่พบการเข้าสู่ระบบ",
+        text: "กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อดำเนินการต่อ",
+      });
+      navigate("/login");
+      return;
+    }
     setIsSubmitting(true);
-    setTimeout(() => {
-      alert("แจ้งชำระเงินเรียบร้อย! เจ้าหน้าที่จะตรวจสอบสลิปภายใน 24 ชม.");
-      localStorage.removeItem("cart");
-      window.dispatchEvent(new Event("cartUpdate"));
+    try {
+      const formData = new FormData();
+      formData.append("slip", file);
+      formData.append("totalAmount", totalAmount.toString());
+      formData.append("sellerId", items[0]?.sellerId || "");
+
+      formData.append("recipient_name", shippingInfo.name);
+      formData.append("phone", shippingInfo.phone);
+      formData.append("address", shippingInfo.address);
+      formData.append("province", shippingInfo.province);
+      formData.append("district", shippingInfo.district);
+      formData.append("sub_district", shippingInfo.subDistrict);
+      formData.append("zip_code", shippingInfo.zipcode);
+
+      const itemsData = items.map((i: CartItem) => ({
+        productId: i.id,
+        productName: i.name,
+        price: i.price,
+        quantity: i.quantity,
+      }));
+      formData.append("items", JSON.stringify(itemsData));
+
+      await axios.post("http://localhost:5000/orders", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      await Swal.fire({
+        icon: "success",
+        title: "แจ้งชำระเงินเรียบร้อย!",
+        text: "เจ้าหน้าที่จะตรวจสอบสลิปภายใน 24 ชม.",
+        confirmButtonColor: "#10B981",
+      });
+
+      clearCart();
       navigate("/");
+    } catch (error: any) {
+      console.error("Order error:", error);
+
+      const errMsg = error.response?.data?.message || "กรุณาลองใหม่อีกครั้ง";
+      Swal.fire({
+        icon: "error",
+        title: "ส่งข้อมูลไม่สำเร็จ",
+        text:
+          typeof errMsg === "string" ? errMsg : "เกิดข้อผิดพลาดในการเชื่อมต่อ",
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -43,31 +119,35 @@ export default function Payment() {
       <Navbar />
 
       <main className="flex-grow max-w-5xl mx-auto w-full px-6 py-12">
-        
-        <button 
-          onClick={() => navigate("/cart")}
+        <button
+          onClick={() => navigate("/checkout")}
           className="group flex items-center gap-3 text-slate-400 hover:text-[#0F172A] transition-all mb-10 font-black text-[10px] uppercase tracking-[0.2em]"
         >
           <span className="bg-white w-10 h-10 flex items-center justify-center rounded-2xl shadow-sm group-hover:shadow-md transition-all text-lg">
             ←
           </span>
-          Back to Cart
+          Back to Shipping Info
         </button>
 
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-black text-[#0F172A] mb-3 tracking-tighter uppercase">ชำระเงิน</h1>
-          <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-[10px]">Checkout Verification</p>
+          <h1 className="text-5xl font-black text-[#0F172A] mb-3 tracking-tighter uppercase">
+            ชำระเงิน
+          </h1>
+          <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-[10px]">
+            Checkout Verification
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          
           <div className="bg-white p-8 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between">
             <div>
               <h2 className="text-xl font-black text-[#0F172A] mb-8 flex items-center gap-3">
-                <span className="bg-[#1E40AF] text-white w-8 h-8 flex items-center justify-center rounded-xl text-[10px] font-black">01</span>
+                <span className="bg-[#1E40AF] text-white w-8 h-8 flex items-center justify-center rounded-xl text-[10px] font-black">
+                  01
+                </span>
                 Bank Transfer
               </h2>
-              
+
               <div className="bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100 mb-8">
                 <div className="flex items-center gap-5 mb-6">
                   <div className="w-12 h-12 bg-[#138B2E] rounded-xl flex items-center justify-center text-white font-black text-[10px]">
@@ -75,17 +155,25 @@ export default function Payment() {
                   </div>
                   <div>
                     <p className="font-black text-[#0F172A]">ธนาคารกสิกรไทย</p>
-                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Kasikorn Bank</p>
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">
+                      Kasikorn Bank
+                    </p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
-                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Account Number</p>
-                    <p className="text-3xl font-black text-[#0F172A] tracking-tight">033-1-00226-7</p>
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">
+                      Account Number
+                    </p>
+                    <p className="text-3xl font-black text-[#0F172A] tracking-tight">
+                      033-1-00226-7
+                    </p>
                   </div>
                   <div>
-                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Account Name</p>
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">
+                      Account Name
+                    </p>
                     <p className="text-xs font-black text-[#0F172A] leading-tight opacity-70">
                       มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ
                     </p>
@@ -97,8 +185,12 @@ export default function Payment() {
             <div className="mt-4 pt-8 border-t border-slate-50">
               <div className="flex items-center justify-between bg-[#F8FAFC] px-6 py-4 rounded-2xl border border-slate-100">
                 <div className="flex flex-col">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Amount</p>
-                  <p className="text-[9px] text-slate-300 font-bold uppercase leading-none">ยอดชำระสุทธิ</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    Total Amount
+                  </p>
+                  <p className="text-[9px] text-slate-300 font-bold uppercase leading-none">
+                    ยอดชำระสุทธิ
+                  </p>
                 </div>
                 <div className="text-right">
                   <div className="flex items-baseline justify-end gap-1 text-[#0F172A]">
@@ -112,47 +204,67 @@ export default function Payment() {
             </div>
           </div>
 
-          {/* Section 02: Upload Slip */}
-          <form onSubmit={handleSubmitOrder} className="bg-white p-8 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
+          <form
+            onSubmit={handleSubmitOrder}
+            className="bg-white p-8 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col"
+          >
             <h2 className="text-xl font-black text-[#0F172A] mb-8 flex items-center gap-3">
-              <span className="bg-[#DB2777] text-white w-8 h-8 flex items-center justify-center rounded-xl text-[10px] font-black">02</span>
+              <span className="bg-[#DB2777] text-white w-8 h-8 flex items-center justify-center rounded-xl text-[10px] font-black">
+                02
+              </span>
               Upload Slip
             </h2>
 
             <label className="relative group cursor-pointer flex-grow min-h-[300px]">
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-              
-              {slipImage ? (
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageChange}
+              />
+
+              {slipPreview ? (
                 <div className="relative h-full w-full rounded-[2rem] overflow-hidden border-2 border-[#DB2777]/20 shadow-inner group">
-                  <img src={slipImage} alt="Slip Preview" className="w-full h-full object-cover" />
+                  <img
+                    src={slipPreview}
+                    alt="Slip Preview"
+                    className="w-full h-full object-cover"
+                  />
                   <div className="absolute inset-0 bg-[#0F172A]/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all backdrop-blur-sm">
-                    <span className="text-white font-black text-[10px] uppercase tracking-[0.2em] bg-[#DB2777] px-6 py-3 rounded-full">Change Photo</span>
+                    <span className="text-white font-black text-[10px] uppercase tracking-[0.2em] bg-[#DB2777] px-6 py-3 rounded-full">
+                      Change Photo
+                    </span>
                   </div>
                 </div>
               ) : (
                 <div className="h-full w-full rounded-[2.5rem] border-2 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-4 hover:border-[#DB2777] hover:bg-pink-50/30 transition-all">
-                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-sm">📄</div>
+                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-sm">
+                    📄
+                  </div>
                   <div className="text-center">
-                    <p className="font-black text-[#0F172A] text-[11px] uppercase tracking-widest">อัปโหลดสลิปธนาคาร</p>
-                    <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-tight">Tap to upload your payment receipt</p>
+                    <p className="font-black text-[#0F172A] text-[11px] uppercase tracking-widest">
+                      อัปโหลดสลิปธนาคาร
+                    </p>
+                    <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-tight">
+                      Tap to upload your payment receipt
+                    </p>
                   </div>
                 </div>
               )}
             </label>
 
-            <button 
+            <button
               type="submit"
-              disabled={isSubmitting || !slipImage}
+              disabled={isSubmitting || !file}
               className={`w-full mt-8 py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] transition-all shadow-xl ${
-                slipImage && !isSubmitting
-                ? "bg-[#10B981] text-white hover:bg-[#059669] hover:scale-[1.02] hover:scale-[1.02] shadow-blue-900/10" 
-                : "bg-slate-100 text-slate-300 cursor-not-allowed"
+                file && !isSubmitting
+                  ? "bg-[#10B981] text-white hover:bg-[#059669] hover:scale-[1.02] shadow-blue-900/10"
+                  : "bg-slate-100 text-slate-300 cursor-not-allowed"
               }`}
             >
               {isSubmitting ? "Processing..." : "Confirm & Send"}
             </button>
           </form>
-
         </div>
       </main>
 
